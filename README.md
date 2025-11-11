@@ -2,7 +2,7 @@
 
 ## Visão Geral do Projeto
 
-Este projeto faz parte do mestrado em Ciência da Computação e tem como objetivo coletar e analisar dados de admissões do Instituto Politécnico de Tomar (IPT) a partir do site oficial da DGES (Direção-Geral do Ensino Superior).
+Este projeto faz parte do mestrado em Engenharia Informática: IOT - Internet das Coisas e tem como objetivo coletar e analisar dados de admissões do Instituto Politécnico de Tomar (IPT) a partir do site oficial da DGES (Direção-Geral do Ensino Superior).
 
 ## Objetivos
 
