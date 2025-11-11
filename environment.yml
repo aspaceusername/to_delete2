@@ -1,0 +1,14 @@
+name: ipt-admissions-analysis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13
+  - pip
+  - requests
+  - beautifulsoup4
+  - pandas
+  - lxml
+  - numpy
+  - pip:
+    - python-dateutil
