@@ -197,6 +197,96 @@ class DGESScraper:
         
         return next_link
     
+    def navigate_to_course_data(self, phase: str, data_type: str, course_code: str = None) -> Optional[str]:
+        """
+        Navega através dos formulários do DGES para chegar aos dados do curso.
+        O site DGES requer múltiplos passos:
+        1. Acessar página inicial de listas
+        2. Selecionar escola (IPT = código 3242)
+        3. Selecionar tipo de lista (candidatos ou colocados)
+        4. Selecionar curso (se especificado)
+        5. Clicar em "Continuar"
+        
+        Args:
+            phase: Número da fase ('1', '2', ou '3')
+            data_type: Tipo de dados ('colocados' ou 'candidatos')
+            course_code: Código do curso (opcional, para filtrar curso específico)
+            
+        Returns:
+            URL final da página de dados ou None se falhar
+        """
+        logger.info(f"Navegando para dados - Fase {phase} - {data_type}")
+        
+        try:
+            # Passo 1: Acessar página inicial com escola IPT (CodR=12 é região, pode variar)
+            # Nota: O parâmetro action=2 pode indicar tipo de visualização
+            initial_url = f"{self.BASE_URL}col{phase}listas.asp?CodR=12&action=2"
+            
+            logger.info(f"Acessando URL inicial: {initial_url}")
+            soup = self.fetch_page(initial_url)
+            
+            if soup is None:
+                logger.error(f"Não foi possível acessar página inicial: {initial_url}")
+                return None
+            
+            # Passo 2: Encontrar e submeter formulário com seleção de escola
+            # Procurar por formulário que contém seleção de escola
+            forms = soup.find_all('form')
+            
+            for form in forms:
+                # Procurar por select com escolas
+                school_select = form.find('select', {'name': lambda x: x and 'escola' in x.lower() if x else False})
+                
+                if school_select:
+                    # Procurar pela opção do IPT (código 3242)
+                    ipt_option = school_select.find('option', {'value': '3242'})
+                    
+                    if ipt_option:
+                        logger.info("Escola IPT (3242) encontrada no formulário")
+                        
+                        # Preparar dados do formulário
+                        form_data = {
+                            'escola': '3242',  # Código do IPT
+                        }
+                        
+                        # Adicionar outros campos do formulário se necessário
+                        for input_tag in form.find_all('input'):
+                            input_name = input_tag.get('name')
+                            input_value = input_tag.get('value', '')
+                            if input_name and input_name not in form_data:
+                                form_data[input_name] = input_value
+                        
+                        # Adicionar tipo de lista (candidatos ou colocados)
+                        # Isso pode estar num select ou radio button
+                        lista_select = form.find('select', {'name': lambda x: x and 'lista' in x.lower() if x else False})
+                        if lista_select:
+                            if data_type == 'candidatos':
+                                form_data['lista'] = 'candidatos'
+                            else:
+                                form_data['lista'] = 'colocados'
+                        
+                        # Submeter formulário
+                        form_action = form.get('action', '')
+                        if form_action:
+                            if not form_action.startswith('http'):
+                                form_action = f"{self.BASE_URL}{form_action.lstrip('/')}"
+                            
+                            logger.info(f"Submetendo formulário para: {form_action}")
+                            
+                            # POST request
+                            time.sleep(self.REQUEST_DELAY)
+                            response = self.session.post(form_action, data=form_data, timeout=self.TIMEOUT)
+                            response.raise_for_status()
+                            
+                            return response.url  # Retornar URL final após submissão
+                        
+            logger.warning("Não foi possível encontrar formulário de seleção de escola")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Erro ao navegar para dados: {e}")
+            return None
+    
     def scrape_courses(self) -> List[Dict]:
         """
         Scrape informações dos cursos do IPT.
@@ -272,16 +362,15 @@ class DGESScraper:
         phase_data = []
         
         try:
-            # Construir URL para a fase específica usando URLs reais do DGES
-            # Candidatos: col{N}listaser.asp
-            # Colocados: col{N}listacol.asp
-            if data_type == 'candidatos':
-                url = f"{self.BASE_URL}col{phase}listaser.asp"
-            else:  # colocados
-                url = f"{self.BASE_URL}col{phase}listacol.asp"
+            # Navegar através dos formulários do DGES para chegar aos dados
+            # O site requer: selecionar escola IPT (3242) -> selecionar tipo de lista -> selecionar curso -> continuar
+            current_url = self.navigate_to_course_data(phase, data_type)
+            
+            if current_url is None:
+                logger.error(f"Não foi possível navegar para dados - Fase {phase} - {data_type}")
+                return phase_data
             
             page_num = 1
-            current_url = url
             
             while current_url:
                 logger.info(f"Processando página {page_num} - Fase {phase} - {data_type}")
