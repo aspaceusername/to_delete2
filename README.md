@@ -26,6 +26,16 @@ Este projeto faz parte do mestrado em Engenharia Informática: IOT - Internet da
 
 ## Instalação
 
+⚠️ **IMPORTANTE**: Certifique-se de que está no **diretório raiz do projeto** antes de executar estes comandos!
+
+```bash
+# PRIMEIRO: Navegue para o diretório do projeto
+cd /caminho/para/PYTHON-IPT-Student-Enrollment-Web-Scraping
+
+# Verifique que está no lugar certo
+ls environment.yml requirements.txt  # Deve mostrar os ficheiros
+```
+
 ### Usando Conda (Recomendado)
 
 ```bash
@@ -37,6 +47,14 @@ conda activate ipt-admissions-analysis
 
 ```bash
 pip install -r requirements.txt
+```
+
+### Verificar Configuração
+
+Execute o script de verificação para confirmar que tudo está configurado:
+
+```bash
+python scripts/check_setup.py
 ```
 
 ## Uso
@@ -86,6 +104,23 @@ O projeto procura responder a questões como:
 - Qual é o perfil típico do estudante que vem para o IPT?
 - O IPT foi a primeira escolha dos alunos?
 - Existem indicadores de possível abandono escolar?
+
+## Resolução de Problemas
+
+Se encontrar erros como:
+- ❌ `EnvironmentFileNotFound: 'environment.yml' file not found`
+- ❌ `Could not open requirements file: 'requirements.txt'`
+- ❌ `can't open file 'scripts/scraper.py'`
+
+**Causa**: Está a executar os comandos no diretório errado!
+
+**Solução**: Navegue para o diretório raiz do projeto primeiro:
+```bash
+cd /caminho/para/PYTHON-IPT-Student-Enrollment-Web-Scraping
+ls environment.yml  # Deve mostrar o ficheiro
+```
+
+📖 **Consulte TROUBLESHOOTING.md para mais soluções**: `cat TROUBLESHOOTING.md`
 
 ## Autor
 

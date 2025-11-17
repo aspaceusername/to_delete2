@@ -1,10 +1,45 @@
 # Como Usar o Web Scraper DGES - Guia Rápido
 
+## ⚠️ IMPORTANTE: Navegue para o Diretório Correto!
+
+**ANTES** de executar qualquer comando, certifique-se de que está no diretório raiz do projeto:
+
+```bash
+# Navegue para o diretório do projeto
+cd /caminho/para/PYTHON-IPT-Student-Enrollment-Web-Scraping
+
+# Verifique que está no lugar certo - este comando deve funcionar:
+ls environment.yml requirements.txt scripts/scraper.py
+
+# Se obtiver "No such file or directory", está no lugar errado!
+# Use 'pwd' para ver onde está e navegue para o diretório correto
+```
+
+### Como Encontrar o Diretório Correto?
+
+```bash
+# Se clonou o repositório mas não sabe onde:
+find ~ -name "environment.yml" -path "*/PYTHON-IPT-Student-Enrollment-Web-Scraping/*" 2>/dev/null
+
+# O comando acima mostrará o caminho completo. Depois:
+cd /caminho/mostrado/pelo/comando/acima
+```
+
 ## Pré-requisitos
 
 Certifique-se de ter Python 3.13+ instalado.
 
 ## Instalação
+
+### Verificação Rápida
+
+Primeiro, execute o script de verificação para garantir que tudo está configurado:
+
+```bash
+python scripts/check_setup.py
+```
+
+Se encontrar problemas, consulte TROUBLESHOOTING.md.
 
 ### Opção 1: Usando Conda (Recomendado)
 
@@ -128,6 +163,29 @@ chmod +x scripts/scraper.py
 - Verifique conexão com internet
 - Verifique se o site está disponível
 - O site pode bloquear certos IPs/regiões
+
+### ❌ "file not found" ou "No such file or directory"
+
+**Este é o erro mais comum!**
+
+**Causa**: Está a executar os comandos no diretório errado.
+
+**Solução**:
+```bash
+# 1. Verifique onde está
+pwd
+
+# 2. Liste os ficheiros - deve ver environment.yml, requirements.txt, etc.
+ls -la
+
+# 3. Se NÃO vir esses ficheiros, navegue para o diretório correto:
+cd /caminho/para/PYTHON-IPT-Student-Enrollment-Web-Scraping
+
+# 4. Confirme que está no lugar certo:
+ls environment.yml && echo "✓ Diretório correto!" || echo "✗ Ainda errado!"
+```
+
+📖 **Para mais soluções detalhadas, consulte**: `TROUBLESHOOTING.md`
 
 ## Questões?
 
