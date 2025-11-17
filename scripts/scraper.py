@@ -159,6 +159,15 @@ class DGESScraper:
         # Remove ou mascara informação pessoal identificável
         if 'nome' in anonymized:
             del anonymized['nome']
+        if 'nome_estudante' in anonymized:
+            # Manter apenas iniciais do nome para estatísticas
+            nome = anonymized['nome_estudante']
+            partes = nome.split()
+            if len(partes) > 0:
+                anonymized['nome_estudante'] = f"{partes[0][0]}. {partes[-1][0]}." if len(partes) > 1 else f"{partes[0][0]}."
+        if 'id_estudante_parcial' in anonymized:
+            # O ID já vem parcial do DGES (ex: 303(...)97), manter como está
+            pass
         if 'numero_candidato' in anonymized:
             anonymized['numero_candidato'] = 'ANON_' + str(hash(anonymized['numero_candidato']))[:8]
         if 'email' in anonymized:
@@ -447,34 +456,84 @@ class DGESScraper:
                     logger.warning(f"Não foi possível acessar: {current_url}")
                     break
                 
-                # Extrair dados da página atual
-                # NOTA: Esta parte precisa ser adaptada à estrutura HTML real
-                # Exemplo: procurar por tabelas com classe específica
-                tables = soup.find_all('table')
+                # Extrair informações da instituição e curso da página
+                # Formato: "3242 - Instituto Politécnico de Tomar - Escola Superior..."
+                # e "9119 - Engenharia Informática"
+                institution_info = None
+                course_info = None
                 
-                for table in tables:
-                    rows = table.find_all('tr')[1:]  # Skip header
+                # Procurar pela div com classe "caixa" que contém info de instituição e curso
+                info_tables = soup.find_all('table', class_='caixa')
+                if info_tables and len(info_tables) > 0:
+                    info_rows = info_tables[0].find_all('tr')
+                    if len(info_rows) >= 2:
+                        # Primeira linha: instituição
+                        institution_info = info_rows[0].find('td').get_text(strip=True) if info_rows[0].find('td') else None
+                        # Segunda linha: curso
+                        course_info = info_rows[1].find('td').get_text(strip=True) if info_rows[1].find('td') else None
+                
+                logger.info(f"Instituição: {institution_info}")
+                logger.info(f"Curso: {course_info}")
+                
+                # Extrair código e nome da instituição
+                codigo_instituicao = ''
+                nome_instituicao = ''
+                if institution_info:
+                    parts = institution_info.split(' - ', 1)
+                    if len(parts) >= 2:
+                        codigo_instituicao = parts[0].strip()
+                        nome_instituicao = parts[1].strip()
+                
+                # Extrair código e nome do curso
+                codigo_curso = ''
+                nome_curso = ''
+                if course_info:
+                    parts = course_info.split(' - ', 1)
+                    if len(parts) >= 2:
+                        codigo_curso = parts[0].strip()
+                        nome_curso = parts[1].strip()
+                
+                # Procurar tabela com dados dos estudantes
+                # A tabela de estudantes não tem classe, mas tem estrutura específica
+                # com colunas para "Nº Identificação (parcial)" e "Nome"
+                student_tables = soup.find_all('table', {'width': '700', 'border': '0'})
+                
+                students_found = 0
+                for table in student_tables:
+                    # Verificar se é a tabela de estudantes (tem tr com td sem background header)
+                    rows = table.find_all('tr')
                     
                     for row in rows:
                         cols = row.find_all('td')
                         
-                        if len(cols) >= 3:  # Verificar se tem colunas suficientes
-                            # Exemplo de extração de dados
-                            # Adaptar conforme estrutura real
-                            record = {
-                                'fase': phase,
-                                'tipo': data_type,
-                                'codigo_curso': cols[0].get_text(strip=True) if len(cols) > 0 else '',
-                                'nome_curso': cols[1].get_text(strip=True) if len(cols) > 1 else '',
-                                'instituicao': cols[2].get_text(strip=True) if len(cols) > 2 else '',
-                            }
-                            
-                            # Filtrar apenas dados do IPT
-                            if self.is_ipt_institution(
-                                record.get('instituicao', ''),
-                                record.get('codigo_instituicao', '')
-                            ):
-                                phase_data.append(record)
+                        # Tabela de estudantes tem 2 colunas: ID parcial e Nome
+                        if len(cols) == 2:
+                            # Verificar se não é o header (header tem background #E8F1F8)
+                            first_col_style = cols[0].get('style', '')
+                            if 'E8F1F8' not in first_col_style:  # Não é header
+                                student_id_partial = cols[0].get_text(strip=True)
+                                student_name = cols[1].get_text(strip=True)
+                                
+                                # Criar registro do estudante
+                                if student_id_partial and student_name:
+                                    record = {
+                                        'fase': phase,
+                                        'tipo': data_type,
+                                        'codigo_instituicao': codigo_instituicao,
+                                        'nome_instituicao': nome_instituicao,
+                                        'codigo_curso': codigo_curso,
+                                        'nome_curso': nome_curso,
+                                        'id_estudante_parcial': student_id_partial,
+                                        'nome_estudante': student_name,
+                                        'ano': 2025
+                                    }
+                                    
+                                    # Anonimizar dados pessoais antes de adicionar
+                                    record_anonimizado = self.anonymize_student_data(record)
+                                    phase_data.append(record_anonimizado)
+                                    students_found += 1
+                
+                logger.info(f"Extraídos {students_found} estudantes nesta página")
                 
                 # Procurar link para próxima página
                 next_url = self.find_next_page_link(soup)
