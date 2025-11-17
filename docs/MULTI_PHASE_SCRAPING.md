@@ -129,16 +129,24 @@ Para adaptar o scraper à estrutura HTML real do site DGES:
 
 ### 1. Identificar URLs
 
-```python
-# Exemplo de URLs a identificar:
-# Fase 1 - Colocados: https://dges.gov.pt/coloc/2025/fase1/colocados/
-# Fase 1 - Candidatos: https://dges.gov.pt/coloc/2025/fase1/candidatos/
-# etc.
-```
+As URLs corretas do DGES são:
 
-Atualize em `scrape_phase_data()`:
+**Candidatos:**
+- Fase 1: `https://dges.gov.pt/coloc/2025/col1listaser.asp`
+- Fase 2: `https://dges.gov.pt/coloc/2025/col2listaser.asp`
+- Fase 3: `https://dges.gov.pt/coloc/2025/col3listaser.asp`
+
+**Colocados:**
+- Fase 1: `https://dges.gov.pt/coloc/2025/col1listacol.asp`
+- Fase 2: `https://dges.gov.pt/coloc/2025/col2listacol.asp`
+- Fase 3: `https://dges.gov.pt/coloc/2025/col3listacol.asp`
+
+O código já está configurado para usar estas URLs:
 ```python
-url = f"{self.BASE_URL}fase{phase}/{data_type}/"
+if data_type == 'candidatos':
+    url = f"{self.BASE_URL}col{phase}listaser.asp"
+else:  # colocados
+    url = f"{self.BASE_URL}col{phase}listacol.asp"
 ```
 
 ### 2. Identificar Estrutura das Tabelas

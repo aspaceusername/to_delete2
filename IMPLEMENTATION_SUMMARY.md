@@ -122,20 +122,31 @@ cat data/fase1_colocados.csv
 
 Para usar com dados reais do site DGES:
 
-### 1️⃣ Analisar Estrutura HTML
-- Abrir https://dges.gov.pt/coloc/2025/ no navegador
-- Pressionar F12 para abrir DevTools
-- Inspecionar tabelas e links de paginação
-- Identificar URLs para cada fase
+### 1️⃣ URLs Já Configuradas ✓
 
-### 2️⃣ Adaptar Código
+As URLs corretas do DGES já estão implementadas:
+
+**Candidatos:**
+- Fase 1: `https://dges.gov.pt/coloc/2025/col1listaser.asp`
+- Fase 2: `https://dges.gov.pt/coloc/2025/col2listaser.asp`
+- Fase 3: `https://dges.gov.pt/coloc/2025/col3listaser.asp`
+
+**Colocados:**
+- Fase 1: `https://dges.gov.pt/coloc/2025/col1listacol.asp`
+- Fase 2: `https://dges.gov.pt/coloc/2025/col2listacol.asp`
+- Fase 3: `https://dges.gov.pt/coloc/2025/col3listacol.asp`
+
+### 2️⃣ Adaptar Estrutura HTML
 Em `scripts/scraper.py`, função `scrape_phase_data()`:
 
 ```python
-# Linha ~242 - Atualizar URLs conforme site real
-url = f"{self.BASE_URL}fase{phase}/{data_type}/"
+# URLs já configuradas:
+if data_type == 'candidatos':
+    url = f"{self.BASE_URL}col{phase}listaser.asp"
+else:  # colocados
+    url = f"{self.BASE_URL}col{phase}listacol.asp"
 
-# Linhas ~255-270 - Adaptar seletores CSS
+# Linhas ~290-305 - Adaptar seletores CSS conforme HTML real
 tables = soup.find_all('table', class_='classe-real')
 ```
 

@@ -272,9 +272,13 @@ class DGESScraper:
         phase_data = []
         
         try:
-            # Construir URL para a fase específica
-            # NOTA: Esta URL precisa ser adaptada à estrutura real do site
-            url = f"{self.BASE_URL}fase{phase}/{data_type}/"
+            # Construir URL para a fase específica usando URLs reais do DGES
+            # Candidatos: col{N}listaser.asp
+            # Colocados: col{N}listacol.asp
+            if data_type == 'candidatos':
+                url = f"{self.BASE_URL}col{phase}listaser.asp"
+            else:  # colocados
+                url = f"{self.BASE_URL}col{phase}listacol.asp"
             
             page_num = 1
             current_url = url

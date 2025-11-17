@@ -151,30 +151,36 @@ python scripts/example_usage.py
 
 ## Como Adaptar à Estrutura Real do Site
 
-O código está preparado para ser facilmente adaptado. Siga estes passos:
+O código já está configurado com as URLs corretas do DGES. Siga estes passos para adaptar à estrutura HTML:
 
-### Passo 1: Identificar URLs
+### Passo 1: URLs Configuradas ✓
 
-1. Abra https://dges.gov.pt/coloc/2025/ no navegador
-2. Navegue até página de cada fase
-3. Anote as URLs (exemplo hipotético):
-   - Fase 1 Colocados: `https://dges.gov.pt/coloc/2025/fase1/colocados/`
-   - Fase 1 Candidatos: `https://dges.gov.pt/coloc/2025/fase1/candidatos/`
-   - etc.
+As URLs corretas já estão implementadas no código:
 
-### Passo 2: Atualizar URLs no Código
+**Candidatos:**
+- Fase 1: `https://dges.gov.pt/coloc/2025/col1listaser.asp`
+- Fase 2: `https://dges.gov.pt/coloc/2025/col2listaser.asp`
+- Fase 3: `https://dges.gov.pt/coloc/2025/col3listaser.asp`
 
-Em `scraper.py`, função `scrape_phase_data()`, linha ~242:
+**Colocados:**
+- Fase 1: `https://dges.gov.pt/coloc/2025/col1listacol.asp`
+- Fase 2: `https://dges.gov.pt/coloc/2025/col2listacol.asp`
+- Fase 3: `https://dges.gov.pt/coloc/2025/col3listacol.asp`
+
+Código em `scraper.py`, função `scrape_phase_data()`:
 ```python
-# Atualizar esta linha conforme URLs reais:
-url = f"{self.BASE_URL}fase{phase}/{data_type}/"
+if data_type == 'candidatos':
+    url = f"{self.BASE_URL}col{phase}listaser.asp"
+else:  # colocados
+    url = f"{self.BASE_URL}col{phase}listacol.asp"
 ```
 
-### Passo 3: Identificar Estrutura HTML
+### Passo 2: Identificar Estrutura HTML
 
 1. Use DevTools (F12) no navegador
-2. Inspecione as tabelas de dados
-3. Identifique os seletores CSS necessários
+2. Abra uma das URLs (ex: https://dges.gov.pt/coloc/2025/col1listacol.asp)
+3. Inspecione as tabelas de dados
+4. Identifique os seletores CSS necessários
 
 Exemplo:
 ```html
@@ -192,7 +198,7 @@ Exemplo:
 </table>
 ```
 
-### Passo 4: Adaptar Extração de Dados
+### Passo 3: Adaptar Extração de Dados
 
 Em `scraper.py`, função `scrape_phase_data()`, linhas ~255-270:
 
@@ -217,7 +223,7 @@ for table in tables:
         }
 ```
 
-### Passo 5: Testar
+### Passo 4: Testar
 
 ```bash
 # Testar com uma fase primeiro
