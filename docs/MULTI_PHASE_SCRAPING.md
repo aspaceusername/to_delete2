@@ -127,27 +127,30 @@ Cada ficheiro CSV contém:
 
 Para adaptar o scraper à estrutura HTML real do site DGES:
 
-### 1. Identificar URLs
+### 1. Navegação por Formulários (Implementado)
 
-As URLs corretas do DGES são:
+O DGES requer navegação multi-etapa através de formulários:
 
-**Candidatos:**
-- Fase 1: `https://dges.gov.pt/coloc/2025/col1listaser.asp`
-- Fase 2: `https://dges.gov.pt/coloc/2025/col2listaser.asp`
-- Fase 3: `https://dges.gov.pt/coloc/2025/col3listaser.asp`
+**URLs de entrada:**
+- Fase 1: `https://dges.gov.pt/coloc/2025/col1listas.asp?CodR=12&action=2`
+- Fase 2: `https://dges.gov.pt/coloc/2025/col2listas.asp?CodR=12&action=2`
+- Fase 3: `https://dges.gov.pt/coloc/2025/col3listas.asp?CodR=12&action=2`
 
-**Colocados:**
-- Fase 1: `https://dges.gov.pt/coloc/2025/col1listacol.asp`
-- Fase 2: `https://dges.gov.pt/coloc/2025/col2listacol.asp`
-- Fase 3: `https://dges.gov.pt/coloc/2025/col3listacol.asp`
+**Fluxo de navegação:**
+1. Acessar URL de entrada
+2. Selecionar escola IPT (código 3242)
+3. Selecionar tipo de lista (candidatos ou colocados)
+4. Selecionar curso (Engenharia Informática)
+5. Submeter formulário ("Continuar")
 
-O código já está configurado para usar estas URLs:
+O código já implementa este fluxo através do método `navigate_to_course_data()`:
+
 ```python
-if data_type == 'candidatos':
-    url = f"{self.BASE_URL}col{phase}listaser.asp"
-else:  # colocados
-    url = f"{self.BASE_URL}col{phase}listacol.asp"
+# Navega através dos formulários automaticamente
+current_url = self.navigate_to_course_data(phase, data_type)
 ```
+
+**Para completar**: É necessário HTML das páginas intermediárias para ajustar os seletores de formulário.
 
 ### 2. Identificar Estrutura das Tabelas
 
@@ -161,6 +164,10 @@ tables = soup.find_all('table', class_='resultado')
 
 Modifique em `scrape_phase_data()`:
 ```python
+# Navegação por formulário já implementada
+current_url = self.navigate_to_course_data(phase, data_type)
+
+# Linhas ~387-411 - Adaptar extração conforme HTML real
 for table in tables:
     rows = table.find_all('tr')[1:]  # Skip header
     

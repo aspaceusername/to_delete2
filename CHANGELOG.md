@@ -151,29 +151,34 @@ python scripts/example_usage.py
 
 ## Como Adaptar à Estrutura Real do Site
 
-O código já está configurado com as URLs corretas do DGES. Siga estes passos para adaptar à estrutura HTML:
+O código já está configurado com navegação por formulários do DGES. Siga estes passos para completar a adaptação:
 
-### Passo 1: URLs Configuradas ✓
+### Passo 1: Navegação por Formulários Implementada ✓
 
-As URLs corretas já estão implementadas no código:
+O DGES requer navegação multi-etapa através de formulários:
 
-**Candidatos:**
-- Fase 1: `https://dges.gov.pt/coloc/2025/col1listaser.asp`
-- Fase 2: `https://dges.gov.pt/coloc/2025/col2listaser.asp`
-- Fase 3: `https://dges.gov.pt/coloc/2025/col3listaser.asp`
+**URLs de entrada:**
+- Fase 1: `https://dges.gov.pt/coloc/2025/col1listas.asp?CodR=12&action=2`
+- Fase 2: `https://dges.gov.pt/coloc/2025/col2listas.asp?CodR=12&action=2`
+- Fase 3: `https://dges.gov.pt/coloc/2025/col3listas.asp?CodR=12&action=2`
 
-**Colocados:**
-- Fase 1: `https://dges.gov.pt/coloc/2025/col1listacol.asp`
-- Fase 2: `https://dges.gov.pt/coloc/2025/col2listacol.asp`
-- Fase 3: `https://dges.gov.pt/coloc/2025/col3listacol.asp`
+**Fluxo implementado:**
+1. Acessar URL de entrada
+2. Procurar formulário com seleção de escola
+3. Selecionar IPT (código 3242)
+4. Selecionar tipo de lista (candidatos/colocados)
+5. Submeter formulário via POST
 
-Código em `scraper.py`, função `scrape_phase_data()`:
+Código em `scraper.py`, método `navigate_to_course_data()`:
 ```python
-if data_type == 'candidatos':
-    url = f"{self.BASE_URL}col{phase}listaser.asp"
-else:  # colocados
-    url = f"{self.BASE_URL}col{phase}listacol.asp"
+def navigate_to_course_data(self, phase: str, data_type: str, course_code: str = None):
+    # Navega através dos formulários automaticamente
+    initial_url = f"{self.BASE_URL}col{phase}listas.asp?CodR=12&action=2"
+    # Procura e submete formulário com escola IPT
+    # Retorna URL final dos dados
 ```
+
+**Para completar**: É necessário HTML das páginas intermediárias para ajustar seletores de formulário.
 
 ### Passo 2: Identificar Estrutura HTML
 
