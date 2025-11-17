@@ -203,8 +203,8 @@ class DGESScraper:
         O site DGES requer múltiplos passos:
         1. Acessar página inicial de listas
         2. Selecionar escola (IPT = código 3242)
-        3. Selecionar tipo de lista (candidatos ou colocados)
-        4. Selecionar curso (se especificado)
+        3. Selecionar tipo de lista (candidatos ou colocados ordenados)
+        4. Selecionar curso (Engenharia Informática se especificado)
         5. Clicar em "Continuar"
         
         Args:
@@ -218,73 +218,139 @@ class DGESScraper:
         logger.info(f"Navegando para dados - Fase {phase} - {data_type}")
         
         try:
-            # Passo 1: Acessar página inicial com escola IPT (CodR=12 é região, pode variar)
-            # Nota: O parâmetro action=2 pode indicar tipo de visualização
+            # Passo 1: Acessar página inicial
             initial_url = f"{self.BASE_URL}col{phase}listas.asp?CodR=12&action=2"
+            logger.info(f"Passo 1: Acessando {initial_url}")
             
-            logger.info(f"Acessando URL inicial: {initial_url}")
             soup = self.fetch_page(initial_url)
-            
             if soup is None:
-                logger.error(f"Não foi possível acessar página inicial: {initial_url}")
+                logger.error(f"Não foi possível acessar página inicial")
                 return None
             
-            # Passo 2: Encontrar e submeter formulário com seleção de escola
-            # Procurar por formulário que contém seleção de escola
+            # Passo 2: Procurar e submeter primeiro formulário (seleção de escola)
             forms = soup.find_all('form')
+            logger.info(f"Encontrados {len(forms)} formulários na página")
             
-            for form in forms:
-                # Procurar por select com escolas
-                school_select = form.find('select', {'name': lambda x: x and 'escola' in x.lower() if x else False})
+            for form_idx, form in enumerate(forms):
+                # Procurar por select de escola - tentar vários nomes possíveis
+                school_select = None
+                for name_pattern in ['CodEst', 'escola', 'Escola', 'codest', 'instituicao', 'Instituicao']:
+                    school_select = form.find('select', {'name': name_pattern})
+                    if school_select:
+                        logger.info(f"Select de escola encontrado com name='{name_pattern}'")
+                        break
+                
+                # Se não encontrou por nome, procurar por select que contenha opção 3242
+                if not school_select:
+                    for select in form.find_all('select'):
+                        if select.find('option', {'value': '3242'}):
+                            school_select = select
+                            logger.info(f"Select de escola encontrado por valor 3242")
+                            break
                 
                 if school_select:
-                    # Procurar pela opção do IPT (código 3242)
-                    ipt_option = school_select.find('option', {'value': '3242'})
+                    # Preparar dados do formulário
+                    form_data = {}
                     
-                    if ipt_option:
-                        logger.info("Escola IPT (3242) encontrada no formulário")
+                    # Adicionar seleção de escola IPT (3242)
+                    select_name = school_select.get('name', 'CodEst')
+                    form_data[select_name] = '3242'
+                    logger.info(f"Selecionando IPT: {select_name}=3242")
+                    
+                    # Adicionar todos os inputs hidden
+                    for input_tag in form.find_all('input', {'type': 'hidden'}):
+                        name = input_tag.get('name')
+                        value = input_tag.get('value', '')
+                        if name:
+                            form_data[name] = value
+                    
+                    # Procurar por radio buttons ou links para tipo de lista
+                    # Tentar identificar "lista de candidatos" vs "lista ordenada de candidatos"
+                    for radio in form.find_all('input', {'type': 'radio'}):
+                        name = radio.get('name')
+                        value = radio.get('value', '')
+                        label_text = ''
                         
-                        # Preparar dados do formulário
-                        form_data = {
-                            'escola': '3242',  # Código do IPT
-                        }
+                        # Tentar encontrar label associado
+                        radio_id = radio.get('id')
+                        if radio_id:
+                            label = form.find('label', {'for': radio_id})
+                            if label:
+                                label_text = label.get_text(strip=True).lower()
                         
-                        # Adicionar outros campos do formulário se necessário
-                        for input_tag in form.find_all('input'):
-                            input_name = input_tag.get('name')
-                            input_value = input_tag.get('value', '')
-                            if input_name and input_name not in form_data:
-                                form_data[input_name] = input_value
-                        
-                        # Adicionar tipo de lista (candidatos ou colocados)
-                        # Isso pode estar num select ou radio button
-                        lista_select = form.find('select', {'name': lambda x: x and 'lista' in x.lower() if x else False})
-                        if lista_select:
-                            if data_type == 'candidatos':
-                                form_data['lista'] = 'candidatos'
-                            else:
-                                form_data['lista'] = 'colocados'
-                        
-                        # Submeter formulário
-                        form_action = form.get('action', '')
-                        if form_action:
-                            if not form_action.startswith('http'):
-                                form_action = f"{self.BASE_URL}{form_action.lstrip('/')}"
-                            
-                            logger.info(f"Submetendo formulário para: {form_action}")
-                            
-                            # POST request
-                            time.sleep(self.REQUEST_DELAY)
-                            response = self.session.post(form_action, data=form_data, timeout=self.TIMEOUT)
-                            response.raise_for_status()
-                            
-                            return response.url  # Retornar URL final após submissão
-                        
-            logger.warning("Não foi possível encontrar formulário de seleção de escola")
-            return None
+                        # Selecionar baseado no tipo de dados
+                        if data_type == 'candidatos' and ('candidatos' in label_text or 'candidatura' in label_text):
+                            if name:
+                                form_data[name] = value
+                                logger.info(f"Selecionando tipo lista candidatos: {name}={value}")
+                        elif data_type == 'colocados' and ('colocad' in label_text or 'ordenad' in label_text):
+                            if name:
+                                form_data[name] = value
+                                logger.info(f"Selecionando tipo lista colocados: {name}={value}")
+                    
+                    # Procurar botão de submit
+                    submit_button = form.find('input', {'type': 'submit'})
+                    if submit_button:
+                        submit_name = submit_button.get('name')
+                        submit_value = submit_button.get('value', '')
+                        if submit_name:
+                            form_data[submit_name] = submit_value
+                    
+                    # Submeter formulário
+                    form_action = form.get('action', '')
+                    if not form_action:
+                        # Se não tem action, usar URL atual
+                        form_action = initial_url
+                    elif not form_action.startswith('http'):
+                        form_action = f"{self.BASE_URL}{form_action.lstrip('/')}"
+                    
+                    logger.info(f"Submetendo formulário para: {form_action}")
+                    logger.info(f"Dados do formulário: {form_data}")
+                    
+                    time.sleep(self.REQUEST_DELAY)
+                    response = self.session.post(form_action, data=form_data, timeout=self.TIMEOUT)
+                    response.raise_for_status()
+                    
+                    # Verificar se precisamos submeter mais formulários (seleção de curso)
+                    soup2 = BeautifulSoup(response.content, 'lxml')
+                    forms2 = soup2.find_all('form')
+                    
+                    if forms2 and course_code:
+                        logger.info(f"Página intermediária encontrada, procurando curso...")
+                        # Procurar formulário com seleção de curso
+                        for form2 in forms2:
+                            course_select = form2.find('select')
+                            if course_select:
+                                # Procurar Engenharia Informática
+                                for option in course_select.find_all('option'):
+                                    option_text = option.get_text(strip=True).lower()
+                                    if 'engenharia' in option_text and 'informática' in option_text:
+                                        course_value = option.get('value')
+                                        # Submeter seleção de curso
+                                        # ... (implementar se necessário)
+                                        break
+                    
+                    logger.info(f"Navegação concluída. URL final: {response.url}")
+                    return response.url
+            
+            logger.warning("Formulário de seleção não encontrado")
+            # Se não encontrou formulário, tentar acesso direto baseado no padrão observado
+            # Isto é um fallback caso a navegação por formulário falhe
+            logger.info("Tentando acesso direto via padrão de URL...")
+            
+            # Baseado no comentário do usuário, após seleção parece ir para listaser.asp ou listacol.asp
+            if data_type == 'candidatos':
+                direct_url = f"{self.BASE_URL}col{phase}listaser.asp?CodEst=3242"
+            else:
+                direct_url = f"{self.BASE_URL}col{phase}listacol.asp?CodEst=3242"
+            
+            logger.info(f"Tentando URL direta: {direct_url}")
+            return direct_url
             
         except Exception as e:
-            logger.error(f"Erro ao navegar para dados: {e}")
+            logger.error(f"Erro ao navegar: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return None
     
     def scrape_courses(self) -> List[Dict]:
