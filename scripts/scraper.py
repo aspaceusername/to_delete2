@@ -273,35 +273,35 @@ class DGESScraper:
                         if name:
                             form_data[name] = value
                     
-                    # Procurar por radio buttons ou links para tipo de lista
-                    # Tentar identificar "lista de candidatos" vs "lista ordenada de candidatos"
-                    for radio in form.find_all('input', {'type': 'radio'}):
-                        name = radio.get('name')
-                        value = radio.get('value', '')
-                        label_text = ''
-                        
-                        # Tentar encontrar label associado
-                        radio_id = radio.get('id')
-                        if radio_id:
-                            label = form.find('label', {'for': radio_id})
-                            if label:
-                                label_text = label.get_text(strip=True).lower()
-                        
-                        # Selecionar baseado no tipo de dados
-                        if data_type == 'candidatos' and ('candidatos' in label_text or 'candidatura' in label_text):
-                            if name:
-                                form_data[name] = value
-                                logger.info(f"Selecionando tipo lista candidatos: {name}={value}")
-                        elif data_type == 'colocados' and ('colocad' in label_text or 'ordenad' in label_text):
-                            if name:
-                                form_data[name] = value
-                                logger.info(f"Selecionando tipo lista colocados: {name}={value}")
+                    # Procurar por botão de submit adequado
+                    # O formulário tem múltiplos botões: "Últimos Colocados", "Lista de Colocados", "Lista Ordenada de Candidatos"
+                    submit_buttons = form.find_all('input', {'type': 'submit'})
+                    selected_button = None
                     
-                    # Procurar botão de submit
-                    submit_button = form.find('input', {'type': 'submit'})
-                    if submit_button:
-                        submit_name = submit_button.get('name')
-                        submit_value = submit_button.get('value', '')
+                    for button in submit_buttons:
+                        button_value = button.get('value', '').lower()
+                        
+                        if data_type == 'colocados':
+                            # Procurar por "Lista de Colocados" ou "Últimos Colocados"
+                            if 'lista de colocados' in button_value or 'últimos colocados' in button_value:
+                                selected_button = button
+                                logger.info(f"Botão para colocados encontrado: {button.get('value')}")
+                                break
+                        elif data_type == 'candidatos':
+                            # Procurar por "Lista Ordenada de Candidatos"
+                            if 'lista ordenada' in button_value or 'candidatos' in button_value:
+                                selected_button = button
+                                logger.info(f"Botão para candidatos encontrado: {button.get('value')}")
+                                break
+                    
+                    # Se não encontrou botão específico, usar o primeiro
+                    if not selected_button and submit_buttons:
+                        selected_button = submit_buttons[0]
+                        logger.info(f"Usando primeiro botão disponível: {selected_button.get('value')}")
+                    
+                    if selected_button:
+                        submit_name = selected_button.get('name')
+                        submit_value = selected_button.get('value', '')
                         if submit_name:
                             form_data[submit_name] = submit_value
                     
@@ -324,20 +324,73 @@ class DGESScraper:
                     soup2 = BeautifulSoup(response.content, 'lxml')
                     forms2 = soup2.find_all('form')
                     
-                    if forms2 and course_code:
-                        logger.info(f"Página intermediária encontrada, procurando curso...")
+                    if forms2:
+                        logger.info(f"Página intermediária encontrada com {len(forms2)} formulários, procurando seleção de curso...")
                         # Procurar formulário com seleção de curso
                         for form2 in forms2:
-                            course_select = form2.find('select')
+                            course_select = form2.find('select', {'name': 'CodCurso'})
+                            if not course_select:
+                                course_select = form2.find('select')  # Qualquer select
+                            
                             if course_select:
-                                # Procurar Engenharia Informática
-                                for option in course_select.find_all('option'):
-                                    option_text = option.get_text(strip=True).lower()
-                                    if 'engenharia' in option_text and 'informática' in option_text:
-                                        course_value = option.get('value')
-                                        # Submeter seleção de curso
-                                        # ... (implementar se necessário)
-                                        break
+                                logger.info(f"Formulário de seleção de curso encontrado")
+                                
+                                # Preparar dados do segundo formulário
+                                form2_data = {}
+                                
+                                # Adicionar todos os inputs hidden do segundo formulário
+                                for input_tag in form2.find_all('input', {'type': 'hidden'}):
+                                    name = input_tag.get('name')
+                                    value = input_tag.get('value', '')
+                                    if name:
+                                        form2_data[name] = value
+                                        logger.info(f"Campo hidden: {name}={value}")
+                                
+                                # Selecionar primeiro curso disponível (ou específico se fornecido)
+                                course_value = None
+                                if course_code:
+                                    # Procurar curso específico
+                                    course_option = course_select.find('option', {'value': course_code})
+                                    if course_option:
+                                        course_value = course_code
+                                        logger.info(f"Curso específico encontrado: {course_code}")
+                                
+                                if not course_value:
+                                    # Pegar primeiro curso disponível
+                                    first_option = course_select.find('option')
+                                    if first_option:
+                                        course_value = first_option.get('value')
+                                        course_name = first_option.get_text(strip=True)
+                                        logger.info(f"Selecionando primeiro curso disponível: {course_value} - {course_name}")
+                                
+                                if course_value:
+                                    course_select_name = course_select.get('name', 'CodCurso')
+                                    form2_data[course_select_name] = course_value
+                                    
+                                    # Procurar botão de submit do segundo formulário
+                                    submit_button2 = form2.find('input', {'type': 'submit'})
+                                    if submit_button2:
+                                        submit_name2 = submit_button2.get('name')
+                                        submit_value2 = submit_button2.get('value', '')
+                                        if submit_name2:
+                                            form2_data[submit_name2] = submit_value2
+                                    
+                                    # Submeter segundo formulário
+                                    form2_action = form2.get('action', '')
+                                    if not form2_action:
+                                        form2_action = response.url
+                                    elif not form2_action.startswith('http'):
+                                        form2_action = f"{self.BASE_URL}{form2_action.lstrip('/')}"
+                                    
+                                    logger.info(f"Submetendo segundo formulário para: {form2_action}")
+                                    logger.info(f"Dados do segundo formulário: {form2_data}")
+                                    
+                                    time.sleep(self.REQUEST_DELAY)
+                                    response2 = self.session.post(form2_action, data=form2_data, timeout=self.TIMEOUT)
+                                    response2.raise_for_status()
+                                    
+                                    logger.info(f"Navegação completa. URL final: {response2.url}")
+                                    return response2.url
                     
                     logger.info(f"Navegação concluída. URL final: {response.url}")
                     return response.url
