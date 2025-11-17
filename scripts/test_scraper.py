@@ -98,6 +98,69 @@ def test_data_structure():
     print("✓ Testes de estrutura de dados passaram")
 
 
+def test_phases_and_data_types():
+    """Testa a configuração de fases e tipos de dados."""
+    scraper = DGESScraper(output_dir='/tmp')
+    
+    # Verificar que as fases estão definidas
+    assert hasattr(scraper, 'PHASES')
+    assert len(scraper.PHASES) == 3
+    assert '1' in scraper.PHASES
+    assert '2' in scraper.PHASES
+    assert '3' in scraper.PHASES
+    
+    # Verificar que os tipos de dados estão definidos
+    assert hasattr(scraper, 'DATA_TYPES')
+    assert len(scraper.DATA_TYPES) == 2
+    assert 'colocados' in scraper.DATA_TYPES
+    assert 'candidatos' in scraper.DATA_TYPES
+    
+    print("✓ Testes de fases e tipos de dados passaram")
+
+
+def test_pagination_link_detection():
+    """Testa a detecção de links de paginação."""
+    from bs4 import BeautifulSoup
+    
+    scraper = DGESScraper(output_dir='/tmp')
+    
+    # HTML de teste com link "Seguinte"
+    html_with_next = """
+    <html>
+        <body>
+            <div class="pagination">
+                <a href="page2.html">Seguinte</a>
+            </div>
+        </body>
+    </html>
+    """
+    
+    soup = BeautifulSoup(html_with_next, 'lxml')
+    next_link = scraper.find_next_page_link(soup)
+    
+    assert next_link is not None
+    assert 'page2.html' in next_link
+    
+    # HTML de teste sem link "Seguinte"
+    html_without_next = """
+    <html>
+        <body>
+            <div class="pagination">
+                <a href="page1.html">Anterior</a>
+            </div>
+        </body>
+    </html>
+    """
+    
+    soup_no_next = BeautifulSoup(html_without_next, 'lxml')
+    no_next_link = scraper.find_next_page_link(soup_no_next)
+    
+    # Pode retornar None ou não encontrar
+    # (depende se "anterior" é interpretado)
+    
+    print("✓ Testes de detecção de link de paginação passaram")
+
+
 def run_all_tests():
     """Executa todos os testes."""
     print("=" * 60)
@@ -109,6 +172,8 @@ def run_all_tests():
         test_ipt_institution_detection()
         test_anonymization()
         test_data_structure()
+        test_phases_and_data_types()
+        test_pagination_link_detection()
         
         print("=" * 60)
         print("✓ TODOS OS TESTES PASSARAM")

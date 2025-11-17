@@ -57,6 +57,10 @@ class DGESScraper:
         'ipt'
     ]
     
+    # Fases de colocação
+    PHASES = ['1', '2', '3']  # 3 fases de admissão
+    DATA_TYPES = ['colocados', 'candidatos']  # admitidos e candidatos
+    
     def __init__(self, output_dir: str = 'data'):
         """
         Inicializa o scraper.
@@ -155,12 +159,261 @@ class DGESScraper:
         # Remove ou mascara informação pessoal identificável
         if 'nome' in anonymized:
             del anonymized['nome']
+        if 'nome_estudante' in anonymized:
+            # Manter apenas iniciais do nome para estatísticas
+            nome = anonymized['nome_estudante']
+            partes = nome.split()
+            if len(partes) > 0:
+                anonymized['nome_estudante'] = f"{partes[0][0]}. {partes[-1][0]}." if len(partes) > 1 else f"{partes[0][0]}."
+        if 'id_estudante_parcial' in anonymized:
+            # O ID já vem parcial do DGES (ex: 303(...)97), manter como está
+            pass
         if 'numero_candidato' in anonymized:
             anonymized['numero_candidato'] = 'ANON_' + str(hash(anonymized['numero_candidato']))[:8]
         if 'email' in anonymized:
             del anonymized['email']
             
         return anonymized
+    
+    def find_next_page_link(self, soup: BeautifulSoup) -> Optional[str]:
+        """
+        Encontra o link para a próxima página (paginação).
+        Procura por links com texto "Seguinte" ou similares.
+        
+        Args:
+            soup: BeautifulSoup object da página atual
+            
+        Returns:
+            URL da próxima página ou None se não houver
+        """
+        # Procurar por links com texto "Seguinte", "Next", "Próxima", etc.
+        next_link = None
+        
+        for link in soup.find_all('a'):
+            link_text = link.get_text(strip=True).lower()
+            if any(keyword in link_text for keyword in ['seguinte', 'next', 'próxima', 'proxima', '>']):
+                href = link.get('href')
+                if href:
+                    # Se for URL relativa, tornar absoluta
+                    if href.startswith('http'):
+                        next_link = href
+                    else:
+                        # Remover / inicial se existir
+                        href = href.lstrip('/')
+                        next_link = f"{self.BASE_URL}{href}"
+                    logger.info(f"Link 'Seguinte' encontrado: {next_link}")
+                    break
+        
+        return next_link
+    
+    def navigate_to_course_data(self, phase: str, data_type: str, course_code: str = None) -> Optional[str]:
+        """
+        Navega através dos formulários do DGES para chegar aos dados do curso.
+        O site DGES requer múltiplos passos:
+        1. Acessar página inicial de listas
+        2. Selecionar escola (IPT = código 3242)
+        3. Selecionar tipo de lista (candidatos ou colocados ordenados)
+        4. Selecionar curso (Engenharia Informática se especificado)
+        5. Clicar em "Continuar"
+        
+        Args:
+            phase: Número da fase ('1', '2', ou '3')
+            data_type: Tipo de dados ('colocados' ou 'candidatos')
+            course_code: Código do curso (opcional, para filtrar curso específico)
+            
+        Returns:
+            URL final da página de dados ou None se falhar
+        """
+        logger.info(f"Navegando para dados - Fase {phase} - {data_type}")
+        
+        try:
+            # Passo 1: Acessar página inicial
+            initial_url = f"{self.BASE_URL}col{phase}listas.asp?CodR=12&action=2"
+            logger.info(f"Passo 1: Acessando {initial_url}")
+            
+            soup = self.fetch_page(initial_url)
+            if soup is None:
+                logger.error(f"Não foi possível acessar página inicial")
+                return None
+            
+            # Passo 2: Procurar e submeter primeiro formulário (seleção de escola)
+            forms = soup.find_all('form')
+            logger.info(f"Encontrados {len(forms)} formulários na página")
+            
+            for form_idx, form in enumerate(forms):
+                # Procurar por select de escola - tentar vários nomes possíveis
+                school_select = None
+                for name_pattern in ['CodEst', 'escola', 'Escola', 'codest', 'instituicao', 'Instituicao']:
+                    school_select = form.find('select', {'name': name_pattern})
+                    if school_select:
+                        logger.info(f"Select de escola encontrado com name='{name_pattern}'")
+                        break
+                
+                # Se não encontrou por nome, procurar por select que contenha opção 3242
+                if not school_select:
+                    for select in form.find_all('select'):
+                        if select.find('option', {'value': '3242'}):
+                            school_select = select
+                            logger.info(f"Select de escola encontrado por valor 3242")
+                            break
+                
+                if school_select:
+                    # Preparar dados do formulário
+                    form_data = {}
+                    
+                    # Adicionar seleção de escola IPT (3242)
+                    select_name = school_select.get('name', 'CodEst')
+                    form_data[select_name] = '3242'
+                    logger.info(f"Selecionando IPT: {select_name}=3242")
+                    
+                    # Adicionar todos os inputs hidden
+                    for input_tag in form.find_all('input', {'type': 'hidden'}):
+                        name = input_tag.get('name')
+                        value = input_tag.get('value', '')
+                        if name:
+                            form_data[name] = value
+                    
+                    # Procurar por botão de submit adequado
+                    # O formulário tem múltiplos botões: "Últimos Colocados", "Lista de Colocados", "Lista Ordenada de Candidatos"
+                    submit_buttons = form.find_all('input', {'type': 'submit'})
+                    selected_button = None
+                    
+                    for button in submit_buttons:
+                        button_value = button.get('value', '').lower()
+                        
+                        if data_type == 'colocados':
+                            # Procurar por "Lista de Colocados" ou "Últimos Colocados"
+                            if 'lista de colocados' in button_value or 'últimos colocados' in button_value:
+                                selected_button = button
+                                logger.info(f"Botão para colocados encontrado: {button.get('value')}")
+                                break
+                        elif data_type == 'candidatos':
+                            # Procurar por "Lista Ordenada de Candidatos"
+                            if 'lista ordenada' in button_value or 'candidatos' in button_value:
+                                selected_button = button
+                                logger.info(f"Botão para candidatos encontrado: {button.get('value')}")
+                                break
+                    
+                    # Se não encontrou botão específico, usar o primeiro
+                    if not selected_button and submit_buttons:
+                        selected_button = submit_buttons[0]
+                        logger.info(f"Usando primeiro botão disponível: {selected_button.get('value')}")
+                    
+                    if selected_button:
+                        submit_name = selected_button.get('name')
+                        submit_value = selected_button.get('value', '')
+                        if submit_name:
+                            form_data[submit_name] = submit_value
+                    
+                    # Submeter formulário
+                    form_action = form.get('action', '')
+                    if not form_action:
+                        # Se não tem action, usar URL atual
+                        form_action = initial_url
+                    elif not form_action.startswith('http'):
+                        form_action = f"{self.BASE_URL}{form_action.lstrip('/')}"
+                    
+                    logger.info(f"Submetendo formulário para: {form_action}")
+                    logger.info(f"Dados do formulário: {form_data}")
+                    
+                    time.sleep(self.REQUEST_DELAY)
+                    response = self.session.post(form_action, data=form_data, timeout=self.TIMEOUT)
+                    response.raise_for_status()
+                    
+                    # Verificar se precisamos submeter mais formulários (seleção de curso)
+                    soup2 = BeautifulSoup(response.content, 'lxml')
+                    forms2 = soup2.find_all('form')
+                    
+                    if forms2:
+                        logger.info(f"Página intermediária encontrada com {len(forms2)} formulários, procurando seleção de curso...")
+                        # Procurar formulário com seleção de curso
+                        for form2 in forms2:
+                            course_select = form2.find('select', {'name': 'CodCurso'})
+                            if not course_select:
+                                course_select = form2.find('select')  # Qualquer select
+                            
+                            if course_select:
+                                logger.info(f"Formulário de seleção de curso encontrado")
+                                
+                                # Preparar dados do segundo formulário
+                                form2_data = {}
+                                
+                                # Adicionar todos os inputs hidden do segundo formulário
+                                for input_tag in form2.find_all('input', {'type': 'hidden'}):
+                                    name = input_tag.get('name')
+                                    value = input_tag.get('value', '')
+                                    if name:
+                                        form2_data[name] = value
+                                        logger.info(f"Campo hidden: {name}={value}")
+                                
+                                # Selecionar primeiro curso disponível (ou específico se fornecido)
+                                course_value = None
+                                if course_code:
+                                    # Procurar curso específico
+                                    course_option = course_select.find('option', {'value': course_code})
+                                    if course_option:
+                                        course_value = course_code
+                                        logger.info(f"Curso específico encontrado: {course_code}")
+                                
+                                if not course_value:
+                                    # Pegar primeiro curso disponível
+                                    first_option = course_select.find('option')
+                                    if first_option:
+                                        course_value = first_option.get('value')
+                                        course_name = first_option.get_text(strip=True)
+                                        logger.info(f"Selecionando primeiro curso disponível: {course_value} - {course_name}")
+                                
+                                if course_value:
+                                    course_select_name = course_select.get('name', 'CodCurso')
+                                    form2_data[course_select_name] = course_value
+                                    
+                                    # Procurar botão de submit do segundo formulário
+                                    submit_button2 = form2.find('input', {'type': 'submit'})
+                                    if submit_button2:
+                                        submit_name2 = submit_button2.get('name')
+                                        submit_value2 = submit_button2.get('value', '')
+                                        if submit_name2:
+                                            form2_data[submit_name2] = submit_value2
+                                    
+                                    # Submeter segundo formulário
+                                    form2_action = form2.get('action', '')
+                                    if not form2_action:
+                                        form2_action = response.url
+                                    elif not form2_action.startswith('http'):
+                                        form2_action = f"{self.BASE_URL}{form2_action.lstrip('/')}"
+                                    
+                                    logger.info(f"Submetendo segundo formulário para: {form2_action}")
+                                    logger.info(f"Dados do segundo formulário: {form2_data}")
+                                    
+                                    time.sleep(self.REQUEST_DELAY)
+                                    response2 = self.session.post(form2_action, data=form2_data, timeout=self.TIMEOUT)
+                                    response2.raise_for_status()
+                                    
+                                    logger.info(f"Navegação completa. URL final: {response2.url}")
+                                    return response2.url
+                    
+                    logger.info(f"Navegação concluída. URL final: {response.url}")
+                    return response.url
+            
+            logger.warning("Formulário de seleção não encontrado")
+            # Se não encontrou formulário, tentar acesso direto baseado no padrão observado
+            # Isto é um fallback caso a navegação por formulário falhe
+            logger.info("Tentando acesso direto via padrão de URL...")
+            
+            # Baseado no comentário do usuário, após seleção parece ir para listaser.asp ou listacol.asp
+            if data_type == 'candidatos':
+                direct_url = f"{self.BASE_URL}col{phase}listaser.asp?CodEst=3242"
+            else:
+                direct_url = f"{self.BASE_URL}col{phase}listacol.asp?CodEst=3242"
+            
+            logger.info(f"Tentando URL direta: {direct_url}")
+            return direct_url
+            
+        except Exception as e:
+            logger.error(f"Erro ao navegar: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return None
     
     def scrape_courses(self) -> List[Dict]:
         """
@@ -221,38 +474,182 @@ class DGESScraper:
         
         return courses_data
     
-    def scrape_admissions_data(self) -> List[Dict]:
+    def scrape_phase_data(self, phase: str, data_type: str) -> List[Dict]:
         """
-        Scrape dados de admissões dos cursos do IPT.
+        Scrape dados de uma fase específica (colocados ou candidatos).
+        
+        Args:
+            phase: Número da fase ('1', '2', ou '3')
+            data_type: Tipo de dados ('colocados' ou 'candidatos')
+            
+        Returns:
+            Lista de dicionários com dados da fase
+        """
+        logger.info(f"Coletando dados - Fase {phase} - {data_type}")
+        
+        phase_data = []
+        
+        try:
+            # Navegar através dos formulários do DGES para chegar aos dados
+            # O site requer: selecionar escola IPT (3242) -> selecionar tipo de lista -> selecionar curso -> continuar
+            current_url = self.navigate_to_course_data(phase, data_type)
+            
+            if current_url is None:
+                logger.error(f"Não foi possível navegar para dados - Fase {phase} - {data_type}")
+                return phase_data
+            
+            page_num = 1
+            
+            while current_url:
+                logger.info(f"Processando página {page_num} - Fase {phase} - {data_type}")
+                
+                soup = self.fetch_page(current_url)
+                
+                if soup is None:
+                    logger.warning(f"Não foi possível acessar: {current_url}")
+                    break
+                
+                # Extrair informações da instituição e curso da página
+                # Formato: "3242 - Instituto Politécnico de Tomar - Escola Superior..."
+                # e "9119 - Engenharia Informática"
+                institution_info = None
+                course_info = None
+                
+                # Procurar pela div com classe "caixa" que contém info de instituição e curso
+                info_tables = soup.find_all('table', class_='caixa')
+                if info_tables and len(info_tables) > 0:
+                    info_rows = info_tables[0].find_all('tr')
+                    if len(info_rows) >= 2:
+                        # Primeira linha: instituição
+                        institution_info = info_rows[0].find('td').get_text(strip=True) if info_rows[0].find('td') else None
+                        # Segunda linha: curso
+                        course_info = info_rows[1].find('td').get_text(strip=True) if info_rows[1].find('td') else None
+                
+                logger.info(f"Instituição: {institution_info}")
+                logger.info(f"Curso: {course_info}")
+                
+                # Extrair código e nome da instituição
+                codigo_instituicao = ''
+                nome_instituicao = ''
+                if institution_info:
+                    parts = institution_info.split(' - ', 1)
+                    if len(parts) >= 2:
+                        codigo_instituicao = parts[0].strip()
+                        nome_instituicao = parts[1].strip()
+                
+                # Extrair código e nome do curso
+                codigo_curso = ''
+                nome_curso = ''
+                if course_info:
+                    parts = course_info.split(' - ', 1)
+                    if len(parts) >= 2:
+                        codigo_curso = parts[0].strip()
+                        nome_curso = parts[1].strip()
+                
+                # Procurar tabela com dados dos estudantes
+                # A tabela de estudantes não tem classe, mas tem estrutura específica
+                # com colunas para "Nº Identificação (parcial)" e "Nome"
+                student_tables = soup.find_all('table', {'width': '700', 'border': '0'})
+                
+                students_found = 0
+                for table in student_tables:
+                    # Verificar se é a tabela de estudantes (tem tr com td sem background header)
+                    rows = table.find_all('tr')
+                    
+                    for row in rows:
+                        cols = row.find_all('td')
+                        
+                        # Tabela de estudantes tem 2 colunas: ID parcial e Nome
+                        if len(cols) == 2:
+                            # Verificar se não é o header (header tem background #E8F1F8)
+                            first_col_style = cols[0].get('style', '')
+                            if 'E8F1F8' not in first_col_style:  # Não é header
+                                student_id_partial = cols[0].get_text(strip=True)
+                                student_name = cols[1].get_text(strip=True)
+                                
+                                # Criar registro do estudante
+                                if student_id_partial and student_name:
+                                    record = {
+                                        'fase': phase,
+                                        'tipo': data_type,
+                                        'codigo_instituicao': codigo_instituicao,
+                                        'nome_instituicao': nome_instituicao,
+                                        'codigo_curso': codigo_curso,
+                                        'nome_curso': nome_curso,
+                                        'id_estudante_parcial': student_id_partial,
+                                        'nome_estudante': student_name,
+                                        'ano': 2025
+                                    }
+                                    
+                                    # Anonimizar dados pessoais antes de adicionar
+                                    record_anonimizado = self.anonymize_student_data(record)
+                                    phase_data.append(record_anonimizado)
+                                    students_found += 1
+                
+                logger.info(f"Extraídos {students_found} estudantes nesta página")
+                
+                # Procurar link para próxima página
+                next_url = self.find_next_page_link(soup)
+                
+                if next_url and next_url != current_url:
+                    current_url = next_url
+                    page_num += 1
+                else:
+                    logger.info(f"Não há mais páginas para Fase {phase} - {data_type}")
+                    break
+            
+            logger.info(f"Total de registros coletados - Fase {phase} - {data_type}: {len(phase_data)}")
+            
+        except Exception as e:
+            logger.error(f"Erro ao coletar dados da Fase {phase} - {data_type}: {e}")
+        
+        return phase_data
+    
+    def scrape_admissions_data(self) -> Dict[str, List[Dict]]:
+        """
+        Scrape dados de admissões dos cursos do IPT para todas as fases.
         
         Returns:
-            Lista de dicionários com dados de admissões
+            Dicionário com dados organizados por fase e tipo
+            Chaves: 'fase1_colocados', 'fase1_candidatos', 'fase2_colocados', etc.
         """
         logger.info("Iniciando coleta de dados de admissões...")
         
-        admissions_data = []
+        all_data = {}
         
         try:
             # Verificar robots.txt antes de iniciar
             if not self.respect_robots_txt():
                 logger.error("Scraping não permitido por robots.txt")
-                return admissions_data
+                return all_data
             
-            # Coletar dados dos cursos
-            courses = self.scrape_courses()
+            # Coletar dados para cada fase e tipo
+            for phase in self.PHASES:
+                for data_type in self.DATA_TYPES:
+                    key = f"fase{phase}_{data_type}"
+                    logger.info(f"\n{'='*60}")
+                    logger.info(f"Processando: {key}")
+                    logger.info(f"{'='*60}")
+                    
+                    data = self.scrape_phase_data(phase, data_type)
+                    all_data[key] = data
+                    
+                    logger.info(f"Total de registros coletados para {key}: {len(data)}")
             
-            # Processar cada curso
-            for course in courses:
-                if self.is_ipt_institution(course.get('instituicao', ''), 
-                                          course.get('codigo_instituicao', '')):
-                    admissions_data.append(course)
+            # Resumo final
+            logger.info(f"\n{'='*60}")
+            logger.info("RESUMO DA COLETA")
+            logger.info(f"{'='*60}")
+            total_records = sum(len(data) for data in all_data.values())
+            logger.info(f"Total geral de registros: {total_records}")
             
-            logger.info(f"Total de registros coletados: {len(admissions_data)}")
+            for key, data in all_data.items():
+                logger.info(f"  {key}: {len(data)} registros")
             
         except Exception as e:
             logger.error(f"Erro durante coleta de dados: {e}")
         
-        return admissions_data
+        return all_data
     
     def save_to_csv(self, data: List[Dict], filename: str = None) -> Path:
         """
@@ -286,22 +683,24 @@ class DGESScraper:
             logger.error(f"Erro ao salvar CSV: {e}")
             raise
     
-    def run(self) -> Path:
+    def run(self) -> List[Path]:
         """
         Executa o processo completo de scraping.
         
         Returns:
-            Path do arquivo CSV com os dados coletados
+            Lista de Paths dos arquivos CSV gerados (6 ficheiros: 3 fases x 2 tipos)
         """
         logger.info("=" * 60)
         logger.info("Iniciando Web Scraper DGES - IPT")
         logger.info("=" * 60)
         
+        output_files = []
+        
         try:
-            # Coletar dados
-            data = self.scrape_admissions_data()
+            # Coletar dados de todas as fases
+            all_data = self.scrape_admissions_data()
             
-            if not data:
+            if not all_data or all(len(data) == 0 for data in all_data.values()):
                 logger.warning("Nenhum dado foi coletado!")
                 logger.info("\nNOTA IMPORTANTE:")
                 logger.info("Este script necessita de análise manual do site da DGES.")
@@ -311,22 +710,47 @@ class DGESScraper:
                 logger.info("1. Abra o site no navegador")
                 logger.info("2. Use DevTools (F12) para inspecionar a estrutura")
                 logger.info("3. Identifique se usa formulários, tabelas ou JavaScript")
-                logger.info("4. Adapte os métodos scrape_courses() conforme necessário")
+                logger.info("4. Adapte os métodos scrape_phase_data() conforme necessário")
                 
-                # Criar CSV vazio como placeholder
-                data = [{
-                    'nota': 'Este ficheiro é um template',
-                    'instrucoes': 'Adapte o script scraper.py à estrutura real do site'
-                }]
-            
-            # Salvar dados
-            output_file = self.save_to_csv(data)
+                # Criar CSVs vazios como placeholder para cada fase e tipo
+                for phase in self.PHASES:
+                    for data_type in self.DATA_TYPES:
+                        filename = f"fase{phase}_{data_type}.csv"
+                        placeholder_data = [{
+                            'nota': 'Este ficheiro é um template',
+                            'fase': phase,
+                            'tipo': data_type,
+                            'instrucoes': 'Adapte o script scraper.py à estrutura real do site'
+                        }]
+                        output_file = self.save_to_csv(placeholder_data, filename)
+                        output_files.append(output_file)
+            else:
+                # Salvar dados de cada fase e tipo em CSV separado
+                for key, data in all_data.items():
+                    filename = f"{key}.csv"
+                    
+                    if not data:
+                        # Se não houver dados, criar CSV vazio com cabeçalhos
+                        logger.warning(f"Nenhum dado coletado para {key}")
+                        data = [{
+                            'nota': 'Nenhum dado coletado',
+                            'fase': key.split('_')[0].replace('fase', ''),
+                            'tipo': key.split('_')[1]
+                        }]
+                    
+                    output_file = self.save_to_csv(data, filename)
+                    output_files.append(output_file)
             
             logger.info("=" * 60)
             logger.info("Scraping concluído!")
+            logger.info(f"Total de ficheiros gerados: {len(output_files)}")
             logger.info("=" * 60)
             
-            return output_file
+            logger.info("\nFicheiros gerados:")
+            for file_path in output_files:
+                logger.info(f"  ✓ {file_path}")
+            
+            return output_files
             
         except Exception as e:
             logger.error(f"Erro fatal durante execução: {e}")
@@ -337,8 +761,11 @@ def main():
     """Função principal."""
     try:
         scraper = DGESScraper(output_dir='data')
-        output_file = scraper.run()
-        print(f"\n✓ Dados salvos em: {output_file}")
+        output_files = scraper.run()
+        
+        print(f"\n✓ Dados salvos em {len(output_files)} ficheiros:")
+        for file_path in output_files:
+            print(f"  - {file_path}")
         
     except KeyboardInterrupt:
         logger.info("\nScraping interrompido pelo utilizador")
