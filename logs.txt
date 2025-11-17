@@ -1,0 +1,200 @@
+(ipt-admissions-analysis) ruben@ruben-HP-Laptop:~/Documents/GitHub/FlyRobotics_Photovoltaic_docs$ python scripts/scraper.py
+2025-11-17 21:11:21,504 - INFO - ============================================================
+2025-11-17 21:11:21,504 - INFO - Iniciando Web Scraper DGES - IPT
+2025-11-17 21:11:21,504 - INFO - ============================================================
+2025-11-17 21:11:21,504 - INFO - Iniciando coleta de dados de admissões...
+2025-11-17 21:11:21,573 - INFO - robots.txt verificado
+2025-11-17 21:11:21,573 - INFO - 
+============================================================
+2025-11-17 21:11:21,573 - INFO - Processando: fase1_colocados
+2025-11-17 21:11:21,573 - INFO - ============================================================
+2025-11-17 21:11:21,573 - INFO - Coletando dados - Fase 1 - colocados
+2025-11-17 21:11:21,573 - INFO - Navegando para dados - Fase 1 - colocados
+2025-11-17 21:11:21,573 - INFO - Passo 1: Acessando https://dges.gov.pt/coloc/2025/col1listas.asp?CodR=12&action=2
+2025-11-17 21:11:23,074 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col1listas.asp?CodR=12&action=2
+2025-11-17 21:11:23,144 - INFO - Encontrados 1 formulários na página
+2025-11-17 21:11:23,144 - INFO - Select de escola encontrado por valor 3242
+2025-11-17 21:11:23,145 - INFO - Selecionando IPT: CodEstab=3242
+2025-11-17 21:11:23,145 - INFO - Submetendo formulário para: https://dges.gov.pt/coloc/2025/col1listaredir.asp
+2025-11-17 21:11:23,145 - INFO - Dados do formulário: {'CodEstab': '3242', 'CodR': '12', 'listagem': 'Últimos Colocados'}
+2025-11-17 21:11:24,674 - INFO - Navegação concluída. URL final: https://dges.gov.pt/coloc/2025/col1listaredir.asp
+2025-11-17 21:11:24,675 - INFO - Processando página 1 - Fase 1 - colocados
+2025-11-17 21:11:26,175 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col1listaredir.asp
+2025-11-17 21:11:26,205 - INFO - Instituição: None
+2025-11-17 21:11:26,205 - INFO - Curso: None
+2025-11-17 21:11:26,205 - INFO - Extraídos 0 estudantes nesta página
+2025-11-17 21:11:26,206 - INFO - Não há mais páginas para Fase 1 - colocados
+2025-11-17 21:11:26,206 - INFO - Total de registros coletados - Fase 1 - colocados: 0
+2025-11-17 21:11:26,207 - INFO - Total de registros coletados para fase1_colocados: 0
+2025-11-17 21:11:26,207 - INFO - 
+============================================================
+2025-11-17 21:11:26,207 - INFO - Processando: fase1_candidatos
+2025-11-17 21:11:26,207 - INFO - ============================================================
+2025-11-17 21:11:26,207 - INFO - Coletando dados - Fase 1 - candidatos
+2025-11-17 21:11:26,207 - INFO - Navegando para dados - Fase 1 - candidatos
+2025-11-17 21:11:26,208 - INFO - Passo 1: Acessando https://dges.gov.pt/coloc/2025/col1listas.asp?CodR=12&action=2
+2025-11-17 21:11:27,708 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col1listas.asp?CodR=12&action=2
+2025-11-17 21:11:27,742 - INFO - Encontrados 1 formulários na página
+2025-11-17 21:11:27,744 - INFO - Select de escola encontrado por valor 3242
+2025-11-17 21:11:27,744 - INFO - Selecionando IPT: CodEstab=3242
+2025-11-17 21:11:27,744 - INFO - Submetendo formulário para: https://dges.gov.pt/coloc/2025/col1listaredir.asp
+2025-11-17 21:11:27,744 - INFO - Dados do formulário: {'CodEstab': '3242', 'CodR': '12', 'listagem': 'Últimos Colocados'}
+2025-11-17 21:11:29,271 - INFO - Navegação concluída. URL final: https://dges.gov.pt/coloc/2025/col1listaredir.asp
+2025-11-17 21:11:29,271 - INFO - Processando página 1 - Fase 1 - candidatos
+2025-11-17 21:11:30,771 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col1listaredir.asp
+2025-11-17 21:11:30,799 - INFO - Instituição: None
+2025-11-17 21:11:30,800 - INFO - Curso: None
+2025-11-17 21:11:30,801 - INFO - Extraídos 0 estudantes nesta página
+2025-11-17 21:11:30,801 - INFO - Não há mais páginas para Fase 1 - candidatos
+2025-11-17 21:11:30,801 - INFO - Total de registros coletados - Fase 1 - candidatos: 0
+2025-11-17 21:11:30,801 - INFO - Total de registros coletados para fase1_candidatos: 0
+2025-11-17 21:11:30,801 - INFO - 
+============================================================
+2025-11-17 21:11:30,801 - INFO - Processando: fase2_colocados
+2025-11-17 21:11:30,801 - INFO - ============================================================
+2025-11-17 21:11:30,801 - INFO - Coletando dados - Fase 2 - colocados
+2025-11-17 21:11:30,801 - INFO - Navegando para dados - Fase 2 - colocados
+2025-11-17 21:11:30,801 - INFO - Passo 1: Acessando https://dges.gov.pt/coloc/2025/col2listas.asp?CodR=12&action=2
+2025-11-17 21:11:32,301 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col2listas.asp?CodR=12&action=2
+2025-11-17 21:11:32,336 - INFO - Encontrados 1 formulários na página
+2025-11-17 21:11:32,337 - INFO - Select de escola encontrado por valor 3242
+2025-11-17 21:11:32,337 - INFO - Selecionando IPT: CodEstab=3242
+2025-11-17 21:11:32,338 - INFO - Submetendo formulário para: https://dges.gov.pt/coloc/2025/col2listaredir.asp
+2025-11-17 21:11:32,338 - INFO - Dados do formulário: {'CodEstab': '3242', 'CodR': '12', 'listagem': 'Últimos Colocados'}
+2025-11-17 21:11:33,880 - INFO - Navegação concluída. URL final: https://dges.gov.pt/coloc/2025/col2listaredir.asp
+2025-11-17 21:11:33,880 - INFO - Processando página 1 - Fase 2 - colocados
+2025-11-17 21:11:35,380 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col2listaredir.asp
+2025-11-17 21:11:35,406 - INFO - Instituição: None
+2025-11-17 21:11:35,407 - INFO - Curso: None
+2025-11-17 21:11:35,407 - INFO - Extraídos 0 estudantes nesta página
+2025-11-17 21:11:35,407 - INFO - Não há mais páginas para Fase 2 - colocados
+2025-11-17 21:11:35,408 - INFO - Total de registros coletados - Fase 2 - colocados: 0
+2025-11-17 21:11:35,408 - INFO - Total de registros coletados para fase2_colocados: 0
+2025-11-17 21:11:35,408 - INFO - 
+============================================================
+2025-11-17 21:11:35,409 - INFO - Processando: fase2_candidatos
+2025-11-17 21:11:35,409 - INFO - ============================================================
+2025-11-17 21:11:35,409 - INFO - Coletando dados - Fase 2 - candidatos
+2025-11-17 21:11:35,410 - INFO - Navegando para dados - Fase 2 - candidatos
+2025-11-17 21:11:35,410 - INFO - Passo 1: Acessando https://dges.gov.pt/coloc/2025/col2listas.asp?CodR=12&action=2
+2025-11-17 21:11:36,910 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col2listas.asp?CodR=12&action=2
+2025-11-17 21:11:36,943 - INFO - Encontrados 1 formulários na página
+2025-11-17 21:11:36,945 - INFO - Select de escola encontrado por valor 3242
+2025-11-17 21:11:36,945 - INFO - Selecionando IPT: CodEstab=3242
+2025-11-17 21:11:36,945 - INFO - Submetendo formulário para: https://dges.gov.pt/coloc/2025/col2listaredir.asp
+2025-11-17 21:11:36,945 - INFO - Dados do formulário: {'CodEstab': '3242', 'CodR': '12', 'listagem': 'Últimos Colocados'}
+2025-11-17 21:11:38,475 - INFO - Navegação concluída. URL final: https://dges.gov.pt/coloc/2025/col2listaredir.asp
+2025-11-17 21:11:38,476 - INFO - Processando página 1 - Fase 2 - candidatos
+2025-11-17 21:11:39,976 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col2listaredir.asp
+2025-11-17 21:11:40,014 - INFO - Instituição: None
+2025-11-17 21:11:40,014 - INFO - Curso: None
+2025-11-17 21:11:40,014 - INFO - Extraídos 0 estudantes nesta página
+2025-11-17 21:11:40,014 - INFO - Não há mais páginas para Fase 2 - candidatos
+2025-11-17 21:11:40,014 - INFO - Total de registros coletados - Fase 2 - candidatos: 0
+2025-11-17 21:11:40,014 - INFO - Total de registros coletados para fase2_candidatos: 0
+2025-11-17 21:11:40,014 - INFO - 
+============================================================
+2025-11-17 21:11:40,014 - INFO - Processando: fase3_colocados
+2025-11-17 21:11:40,014 - INFO - ============================================================
+2025-11-17 21:11:40,014 - INFO - Coletando dados - Fase 3 - colocados
+2025-11-17 21:11:40,014 - INFO - Navegando para dados - Fase 3 - colocados
+2025-11-17 21:11:40,014 - INFO - Passo 1: Acessando https://dges.gov.pt/coloc/2025/col3listas.asp?CodR=12&action=2
+2025-11-17 21:11:41,515 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col3listas.asp?CodR=12&action=2
+2025-11-17 21:11:41,546 - INFO - Encontrados 1 formulários na página
+2025-11-17 21:11:41,548 - INFO - Select de escola encontrado por valor 3242
+2025-11-17 21:11:41,548 - INFO - Selecionando IPT: CodEstab=3242
+2025-11-17 21:11:41,548 - INFO - Submetendo formulário para: https://dges.gov.pt/coloc/2025/col3listaredir.asp
+2025-11-17 21:11:41,549 - INFO - Dados do formulário: {'CodEstab': '3242', 'CodR': '12', 'listagem': 'Últimos Colocados'}
+2025-11-17 21:11:43,076 - INFO - Navegação concluída. URL final: https://dges.gov.pt/coloc/2025/col3listaredir.asp
+2025-11-17 21:11:43,076 - INFO - Processando página 1 - Fase 3 - colocados
+2025-11-17 21:11:44,577 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col3listaredir.asp
+2025-11-17 21:11:44,600 - INFO - Instituição: None
+2025-11-17 21:11:44,600 - INFO - Curso: None
+2025-11-17 21:11:44,600 - INFO - Extraídos 0 estudantes nesta página
+2025-11-17 21:11:44,601 - INFO - Não há mais páginas para Fase 3 - colocados
+2025-11-17 21:11:44,601 - INFO - Total de registros coletados - Fase 3 - colocados: 0
+2025-11-17 21:11:44,601 - INFO - Total de registros coletados para fase3_colocados: 0
+2025-11-17 21:11:44,601 - INFO - 
+============================================================
+2025-11-17 21:11:44,601 - INFO - Processando: fase3_candidatos
+2025-11-17 21:11:44,601 - INFO - ============================================================
+2025-11-17 21:11:44,601 - INFO - Coletando dados - Fase 3 - candidatos
+2025-11-17 21:11:44,601 - INFO - Navegando para dados - Fase 3 - candidatos
+2025-11-17 21:11:44,601 - INFO - Passo 1: Acessando https://dges.gov.pt/coloc/2025/col3listas.asp?CodR=12&action=2
+2025-11-17 21:11:46,101 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col3listas.asp?CodR=12&action=2
+2025-11-17 21:11:46,130 - INFO - Encontrados 1 formulários na página
+2025-11-17 21:11:46,132 - INFO - Select de escola encontrado por valor 3242
+2025-11-17 21:11:46,132 - INFO - Selecionando IPT: CodEstab=3242
+2025-11-17 21:11:46,132 - INFO - Submetendo formulário para: https://dges.gov.pt/coloc/2025/col3listaredir.asp
+2025-11-17 21:11:46,132 - INFO - Dados do formulário: {'CodEstab': '3242', 'CodR': '12', 'listagem': 'Últimos Colocados'}
+2025-11-17 21:11:47,657 - INFO - Navegação concluída. URL final: https://dges.gov.pt/coloc/2025/col3listaredir.asp
+2025-11-17 21:11:47,657 - INFO - Processando página 1 - Fase 3 - candidatos
+2025-11-17 21:11:49,158 - INFO - Buscando: https://dges.gov.pt/coloc/2025/col3listaredir.asp
+2025-11-17 21:11:49,183 - INFO - Instituição: None
+2025-11-17 21:11:49,183 - INFO - Curso: None
+2025-11-17 21:11:49,183 - INFO - Extraídos 0 estudantes nesta página
+2025-11-17 21:11:49,183 - INFO - Não há mais páginas para Fase 3 - candidatos
+2025-11-17 21:11:49,183 - INFO - Total de registros coletados - Fase 3 - candidatos: 0
+2025-11-17 21:11:49,183 - INFO - Total de registros coletados para fase3_candidatos: 0
+2025-11-17 21:11:49,183 - INFO - 
+============================================================
+2025-11-17 21:11:49,183 - INFO - RESUMO DA COLETA
+2025-11-17 21:11:49,183 - INFO - ============================================================
+2025-11-17 21:11:49,183 - INFO - Total geral de registros: 0
+2025-11-17 21:11:49,183 - INFO -   fase1_colocados: 0 registros
+2025-11-17 21:11:49,183 - INFO -   fase1_candidatos: 0 registros
+2025-11-17 21:11:49,183 - INFO -   fase2_colocados: 0 registros
+2025-11-17 21:11:49,184 - INFO -   fase2_candidatos: 0 registros
+2025-11-17 21:11:49,184 - INFO -   fase3_colocados: 0 registros
+2025-11-17 21:11:49,184 - INFO -   fase3_candidatos: 0 registros
+2025-11-17 21:11:49,184 - WARNING - Nenhum dado foi coletado!
+2025-11-17 21:11:49,184 - INFO - 
+NOTA IMPORTANTE:
+2025-11-17 21:11:49,184 - INFO - Este script necessita de análise manual do site da DGES.
+2025-11-17 21:11:49,184 - INFO - Por favor, visite https://dges.gov.pt/coloc/2025/
+2025-11-17 21:11:49,184 - INFO - e identifique a estrutura HTML para extração de dados.
+2025-11-17 21:11:49,184 - INFO - 
+Passos sugeridos:
+2025-11-17 21:11:49,184 - INFO - 1. Abra o site no navegador
+2025-11-17 21:11:49,184 - INFO - 2. Use DevTools (F12) para inspecionar a estrutura
+2025-11-17 21:11:49,184 - INFO - 3. Identifique se usa formulários, tabelas ou JavaScript
+2025-11-17 21:11:49,184 - INFO - 4. Adapte os métodos scrape_phase_data() conforme necessário
+2025-11-17 21:11:49,187 - INFO - Dados salvos em: data/fase1_colocados.csv
+2025-11-17 21:11:49,187 - INFO - Total de registros: 1
+2025-11-17 21:11:49,187 - INFO - Colunas: nota, fase, tipo, instrucoes
+2025-11-17 21:11:49,188 - INFO - Dados salvos em: data/fase1_candidatos.csv
+2025-11-17 21:11:49,188 - INFO - Total de registros: 1
+2025-11-17 21:11:49,188 - INFO - Colunas: nota, fase, tipo, instrucoes
+2025-11-17 21:11:49,189 - INFO - Dados salvos em: data/fase2_colocados.csv
+2025-11-17 21:11:49,189 - INFO - Total de registros: 1
+2025-11-17 21:11:49,189 - INFO - Colunas: nota, fase, tipo, instrucoes
+2025-11-17 21:11:49,190 - INFO - Dados salvos em: data/fase2_candidatos.csv
+2025-11-17 21:11:49,191 - INFO - Total de registros: 1
+2025-11-17 21:11:49,191 - INFO - Colunas: nota, fase, tipo, instrucoes
+2025-11-17 21:11:49,192 - INFO - Dados salvos em: data/fase3_colocados.csv
+2025-11-17 21:11:49,192 - INFO - Total de registros: 1
+2025-11-17 21:11:49,192 - INFO - Colunas: nota, fase, tipo, instrucoes
+2025-11-17 21:11:49,193 - INFO - Dados salvos em: data/fase3_candidatos.csv
+2025-11-17 21:11:49,193 - INFO - Total de registros: 1
+2025-11-17 21:11:49,193 - INFO - Colunas: nota, fase, tipo, instrucoes
+2025-11-17 21:11:49,193 - INFO - ============================================================
+2025-11-17 21:11:49,193 - INFO - Scraping concluído!
+2025-11-17 21:11:49,193 - INFO - Total de ficheiros gerados: 6
+2025-11-17 21:11:49,193 - INFO - ============================================================
+2025-11-17 21:11:49,193 - INFO - 
+Ficheiros gerados:
+2025-11-17 21:11:49,193 - INFO -   ✓ data/fase1_colocados.csv
+2025-11-17 21:11:49,194 - INFO -   ✓ data/fase1_candidatos.csv
+2025-11-17 21:11:49,194 - INFO -   ✓ data/fase2_colocados.csv
+2025-11-17 21:11:49,194 - INFO -   ✓ data/fase2_candidatos.csv
+2025-11-17 21:11:49,194 - INFO -   ✓ data/fase3_colocados.csv
+2025-11-17 21:11:49,194 - INFO -   ✓ data/fase3_candidatos.csv
+
+✓ Dados salvos em 6 ficheiros:
+  - data/fase1_colocados.csv
+  - data/fase1_candidatos.csv
+  - data/fase2_colocados.csv
+  - data/fase2_candidatos.csv
+  - data/fase3_colocados.csv
+  - data/fase3_candidatos.csv
+(ipt-admissions-analysis) ruben@ruben-HP-Laptop:~/Documents/GitHub/FlyRobotics_Photovoltaic_docs$ 
