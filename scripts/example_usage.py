@@ -20,16 +20,18 @@ import pandas as pd
 def example_basic_usage():
     """Exemplo básico de uso do scraper."""
     print("=" * 60)
-    print("Exemplo 1: Uso Básico")
+    print("Exemplo 1: Uso Básico - Multi-Fase")
     print("=" * 60)
     
     # Criar scraper
     scraper = DGESScraper(output_dir='../data')
     
-    # Executar
-    output_file = scraper.run()
+    # Executar (gera 6 CSVs)
+    output_files = scraper.run()
     
-    print(f"\nDados salvos em: {output_file}")
+    print(f"\nDados salvos em {len(output_files)} ficheiros:")
+    for file_path in output_files:
+        print(f"  - {file_path}")
 
 
 def example_custom_usage():
@@ -168,10 +170,60 @@ def example_anonymization():
     print("Número de candidato foi convertido em hash anónimo.")
 
 
+def example_multi_phase_analysis():
+    """Exemplo de análise de dados multi-fase."""
+    print("\n" + "=" * 60)
+    print("Exemplo 5: Análise de Dados Multi-Fase")
+    print("=" * 60)
+    
+    scraper = DGESScraper(output_dir='../data')
+    
+    # Dados de exemplo para demonstração
+    # Em produção, estes viriam do scraping real
+    example_data = {
+        'fase1_colocados': [
+            {'curso': 'Engenharia Informática', 'colocados': 28, 'fase': '1'},
+            {'curso': 'Gestão de Empresas', 'colocados': 22, 'fase': '1'}
+        ],
+        'fase1_candidatos': [
+            {'curso': 'Engenharia Informática', 'candidatos': 45, 'fase': '1'},
+            {'curso': 'Gestão de Empresas', 'candidatos': 35, 'fase': '1'}
+        ],
+        'fase2_colocados': [
+            {'curso': 'Engenharia Informática', 'colocados': 2, 'fase': '2'},
+            {'curso': 'Gestão de Empresas', 'colocados': 3, 'fase': '2'}
+        ],
+        'fase2_candidatos': [
+            {'curso': 'Engenharia Informática', 'candidatos': 15, 'fase': '2'},
+            {'curso': 'Gestão de Empresas', 'candidatos': 12, 'fase': '2'}
+        ],
+        'fase3_colocados': [],
+        'fase3_candidatos': []
+    }
+    
+    print("\n📊 Resumo por Fase:")
+    for phase in ['1', '2', '3']:
+        colocados_key = f'fase{phase}_colocados'
+        candidatos_key = f'fase{phase}_candidatos'
+        
+        total_colocados = sum(item.get('colocados', 0) for item in example_data.get(colocados_key, []))
+        total_candidatos = sum(item.get('candidatos', 0) for item in example_data.get(candidatos_key, []))
+        
+        print(f"\nFase {phase}:")
+        print(f"  Total de colocados: {total_colocados}")
+        print(f"  Total de candidatos: {total_candidatos}")
+        if total_candidatos > 0:
+            taxa = (total_colocados / total_candidatos * 100)
+            print(f"  Taxa de colocação: {taxa:.1f}%")
+    
+    print("\n💡 Insight: A maioria dos alunos é colocada na Fase 1.")
+    print("   As vagas restantes são preenchidas nas fases 2 e 3.")
+
+
 def main():
     """Função principal - executa todos os exemplos."""
     print("\n" + "=" * 60)
-    print("EXEMPLOS DE USO DO SCRAPER DGES")
+    print("EXEMPLOS DE USO DO SCRAPER DGES - MULTI-FASE")
     print("=" * 60)
     
     try:
@@ -188,14 +240,17 @@ def main():
         # Exemplo 4: Anonimização
         example_anonymization()
         
+        # Exemplo 5: Análise multi-fase
+        example_multi_phase_analysis()
+        
         print("\n" + "=" * 60)
         print("✓ Todos os exemplos executados com sucesso!")
         print("=" * 60)
         print("\nPróximos passos:")
         print("1. Analise o site da DGES para identificar a estrutura HTML")
-        print("2. Adapte o método scrape_courses() em scraper.py")
+        print("2. Adapte o método scrape_phase_data() em scraper.py")
         print("3. Execute o scraper: python scripts/scraper.py")
-        print("4. Analise os dados coletados")
+        print("4. Analise os 6 CSVs gerados (3 fases x 2 tipos)")
         print("\nConsulte docs/IMPLEMENTATION_GUIDE.md para mais detalhes.")
         
     except Exception as e:
